@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Summit Project</string>
+    <string name="app_name">Piggy</string>
     <string name="welcome">Welcome to PIGGY!</string>
     <string name="username">Username</string>
     <string name="password">Password</string>
@@ -7,12 +7,17 @@
     <string name="sign_in_merchant">Merchant</string>
     <string name="mer_sign_in">Merchant</string>
     <string name="remember_me">Remember Me</string>
+    <string name="balance">Balance: %1$d</string>
+    <string name="CustomerName">%1$s %2$s</string>
     <string name="summary_title">Hello, %1$s</string>
     <string name="summary_subtitle">Your recent transactions for Card x%1$s:</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
 
-
+    <color name="white">#FFFFFF</color>
 
     <string name="customer_phone_num">Customer Phone Number</string>
-    <string name="desired_amount">Enter Desired Amount</string>
-    <string name="send">Send</string>
+    <string name="desired_amount">Enter Amount Change</string>
+    <string name="send">Oink</string>
+    <string name="title_activity_redeem">RedeemActivity</string>
 </resources>

@@ -3,9 +3,11 @@ package com.summit.summitproject;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -15,18 +17,28 @@ import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+import com.reimaginebanking.api.nessieandroidsdk.NessieError;
+import com.reimaginebanking.api.nessieandroidsdk.NessieResultsListener;
+import com.reimaginebanking.api.nessieandroidsdk.models.Customer;
+import com.reimaginebanking.api.nessieandroidsdk.requestclients.NessieClient;
 import com.summit.summitproject.prebuilt.login.LoginListener;
 import com.summit.summitproject.prebuilt.login.LoginManager;
 import com.summit.summitproject.prebuilt.model.Transaction;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * The first screen of our app. Takes in a username and password and interacts with the
  * {@link LoginManager} to retrieve user details. Also allows the user to check "Remember Me"
  * to locally store and recall credentials.
  */
-public class LoginActivity extends AppCompatActivity {
+public class LoginActivity extends BaseActivity {
 
     /**
      * The key under which the <b>username</b> will be stored in {@link SharedPreferences}.
@@ -49,7 +61,7 @@ public class LoginActivity extends AppCompatActivity {
 
     private EditText password;
 
-    private Button signIn;
+    //private Button signIn;
 
     private CheckBox rememberMe;
 
@@ -57,6 +69,8 @@ public class LoginActivity extends AppCompatActivity {
 
     private Button merchantButton;
     private Button customerButton;
+
+    private DatabaseReference mDatabase;
     /**
      * Called the first time an Activity is created, but before any UI is shown to the user.
      * Prepares the layout and assigns UI widget variables.
@@ -68,12 +82,14 @@ public class LoginActivity extends AppCompatActivity {
 
         username = findViewById(R.id.username);
         password = findViewById(R.id.password);
-        signIn = findViewById(R.id.sign_in);
+        //signIn = findViewById(R.id.sign_in);
         rememberMe = findViewById(R.id.remember_me);
         progress = findViewById(R.id.progress);
 
         merchantButton = findViewById(R.id.mer_sign_in);
         customerButton = findViewById(R.id.sign_in);
+
+        mDatabase = FirebaseDatabase.getInstance().getReference("data");
 
 
         setupWidgets();
@@ -83,6 +99,22 @@ public class LoginActivity extends AppCompatActivity {
         rememberMe.setChecked(sharedPreferences.contains(PREF_USERNAME));
         username.setText(sharedPreferences.getString(PREF_USERNAME, ""));
         password.setText(sharedPreferences.getString(PREF_PASSWORD, ""));
+
+//        //change later
+//        NessieClient client = NessieClient.getInstance("f5004659b7801782b99edc81141d0fd1");
+//        client.CUSTOMER.getCustomers(new NessieResultsListener() {
+//            @Override
+//            public void onSuccess(Object result) {
+//                List<Customer> customers = (List<Customer>) result;
+//                // do something with the list of customers here
+//                Log.d("LoginActivity", customers.toString());
+//            }
+//
+//            @Override
+//            public void onFailure(NessieError error) {
+//                // handle error
+//            }
+//        });
     }
 
     /**
@@ -92,30 +124,121 @@ public class LoginActivity extends AppCompatActivity {
         username.addTextChangedListener(textWatcher);
         password.addTextChangedListener(textWatcher);
 
-        final String inputtedUsername = username.getText().toString();
-        final String inputtedPassword = password.getText().toString();
-
         merchantButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
-                startActivity(new Intent(LoginActivity.this,MerchantTerminalActivity.class));
+
+                final String inputtedUsername = username.getText().toString();
+                final String inputtedPassword = password.getText().toString();
+
+                if(inputtedUsername.length() != 0 && inputtedPassword.length() != 0) {
+
+                    mDatabase.child("merchantInformation").child(inputtedUsername).addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(DataSnapshot dataSnapshot) {
+                            if (dataSnapshot.exists()) {
+
+                                // test
+
+                                // end test
+
+
+                                Intent intent = new Intent(LoginActivity.this, MerchantTerminalActivity.class);
+                                //                            intent.putExtra("phoneNumber",inputtedUsername);
+                                PiggyBApplication.applicationState.phoneNumber = inputtedUsername;
+                                startActivity(intent);
+                            } else {
+                                // User does not exist. NOW call createUserWithEmailAndPassword
+                                showToast("Invalid username and password");
+                                username.setText("");
+                                password.setText("");
+                                // Your previous code here.
+
+                            }
+                        }
+
+                        @Override
+                        public void onCancelled(DatabaseError databaseError) {
+
+                        }
+                    });
+
+                }
+                else{
+                    showToast("Empty username or password");
+                }
             }
         });
 
-        signIn.setOnClickListener(new OnClickListener() {
+        customerButton.setOnClickListener(new OnClickListener() {
             @Override
-            public void onClick(View v) {
-                // Don't allow user input while logging in & show the progress bar
-                setAllEnabled(false);
-                progress.setVisibility(View.VISIBLE);
+//            public void onClick(View v) {
+//
+//                String inputtedUsername = username.getText().toString();
+//                String inputtedPassword = password.getText().toString();
+//
+//                // Don't allow user input while logging in & show the progress bar
+//                setAllEnabled(false);
+//                progress.setVisibility(View.VISIBLE);
+//
+//                // Instantiate the login manager, passing the username, password, and result listener
+//                LoginManager loginManager = new LoginManager(inputtedUsername, inputtedPassword, loginListener);
+//
+//                // Kick off the login network call
+//                loginManager.execute();
+            public void onClick(View view) {
 
-                // Instantiate the login manager, passing the username, password, and result listener
-                LoginManager loginManager = new LoginManager(inputtedUsername, inputtedPassword, loginListener);
+                final String inputtedUsername = username.getText().toString();
+                final String inputtedPassword = password.getText().toString();
 
-                // Kick off the login network call
-                loginManager.execute();
+                if(inputtedUsername.length() != 0 && inputtedPassword.length() != 0) {
+
+                    mDatabase.child("customerInformation").child(inputtedUsername).addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(DataSnapshot dataSnapshot) {
+                            if (dataSnapshot.exists()) {
+                                PiggyBApplication.applicationState.phoneNumber = inputtedUsername;
+                                PiggyBApplication.applicationState.context = LoginActivity.this;
+                                startActivity(new Intent(LoginActivity.this, CustomerBalanceActivity.class));
+                                //                            intent.putExtra("phoneNumber",inputtedUsername);
+                            } else {
+                                // User does not exist. NOW call createUserWithEmailAndPassword
+                                showToast("Invalid username and password");
+                                username.setText("");
+                                password.setText("");
+                                // Your previous code here.
+
+                            }
+                        }
+
+                        @Override
+                        public void onCancelled(DatabaseError databaseError) {
+
+                        }
+                    });
+
+                }
+                else{
+                    showToast("Empty username or password");
+                }
             }
         });
+
+
+//        signIn.setOnClickListener(new OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                // Don't allow user input while logging in & show the progress bar
+//                setAllEnabled(false);
+//                progress.setVisibility(View.VISIBLE);
+//
+//                // Instantiate the login manager, passing the username, password, and result listener
+//                LoginManager loginManager = new LoginManager(inputtedUsername, inputtedPassword, loginListener);
+//
+//                // Kick off the login network call
+//                loginManager.execute();
+//            }
+//        });
 
         rememberMe.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
@@ -154,10 +277,12 @@ public class LoginActivity extends AppCompatActivity {
      */
     private TextWatcher textWatcher = new TextWatcher() {
         @Override
-        public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+        public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+        }
 
         @Override
-        public void onTextChanged(CharSequence s, int start, int before, int count) {}
+        public void onTextChanged(CharSequence s, int start, int before, int count) {
+        }
 
         @Override
         public void afterTextChanged(Editable s) {
@@ -165,7 +290,7 @@ public class LoginActivity extends AppCompatActivity {
             // and password.
             String usernameText = username.getText().toString().trim();
             String passwordText = password.getText().toString().trim();
-            signIn.setEnabled(usernameText.length() > 0 && passwordText.length() > 0);
+            //signIn.setEnabled(usernameText.length() > 0 && passwordText.length() > 0);
         }
     };
 
@@ -208,7 +333,16 @@ public class LoginActivity extends AppCompatActivity {
     private void setAllEnabled(boolean enabled) {
         username.setEnabled(enabled);
         password.setEnabled(enabled);
-        signIn.setEnabled(enabled);
+        //signIn.setEnabled(enabled);
+    }
+
+    private void showToast(final String message) {
+        this.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 }
 
